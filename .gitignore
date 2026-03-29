@@ -1,0 +1,14 @@
+node_modules/
+
+# Build output
+dist/
+packages/*/dist/
+
+# TypeScript build state
+*.tsbuildinfo
+
+# Local Engram state from older repo-local versions
+.engram/
+
+# macOS metadata
+.DS_Store

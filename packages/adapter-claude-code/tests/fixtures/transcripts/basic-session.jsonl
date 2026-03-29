@@ -1,0 +1,9 @@
+{"type":"system","content":"init"}
+{"type":"user","content":"no, use pnpm not npm for this project"}
+{"type":"assistant","content":"I will use pnpm for this project."}
+{"type":"user","content":[{"type":"text","text":"let's go with PostgreSQL for the database"}]}
+{"type":"assistant","content":[{"type":"text","text":"PostgreSQL selected for the database."}]}
+{"type":"user","content":"remember that staging uses a different schema"}
+{"type":"assistant","content":"Noted."}
+{"type":"user","content":"we still need to add rate limiting"}
+{"type":"assistant","content":"I will keep that pending."}

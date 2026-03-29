@@ -1,0 +1,17 @@
+{
+  "name": "engram",
+  "version": "0.1.0",
+  "description": "Persistent local memory for Claude Code. Learns from your sessions, remembers across them.",
+  "author": {
+    "name": "seshanpillay"
+  },
+  "homepage": "https://github.com/seshanpillay/engram",
+  "repository": "https://github.com/seshanpillay/engram",
+  "license": "MIT",
+  "keywords": [
+    "engram",
+    "claude-code",
+    "memory",
+    "persistent"
+  ]
+}
