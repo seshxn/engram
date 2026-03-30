@@ -13,6 +13,20 @@ describe('decisions extractor', () => {
         entry: 'Go with PostgreSQL for the database',
         target: 'project-decisions',
         scope: 'project',
+        confidence: 'high',
+      },
+    ]);
+  });
+
+  it('captures explicit plan statements as project decisions', () => {
+    const results = extractDecisions('the plan is to ship the CLI first', 'Sounds good.');
+
+    expect(results).toEqual([
+      {
+        entry: 'Ship the CLI first',
+        target: 'project-decisions',
+        scope: 'project',
+        confidence: 'high',
       },
     ]);
   });

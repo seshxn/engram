@@ -1,4 +1,4 @@
-import { ensureDirs, getGlobalDir, getProjectDir, processSession } from '@engram/core';
+import { ensureDirs, getGlobalDir, getProjectDir, logger, processSession } from '@engram/core';
 import { readStdinJson } from './hooks-io.js';
 import { claudeCodeAdapter } from './transcript-adapter.js';
 
@@ -15,9 +15,7 @@ export const main = async (): Promise<void> => {
 
   const input = await readStdinJson<HookInput>();
   if (!input?.cwd || !input.transcript_path) {
-    if (process.env.ENGRAM_DEBUG === '1') {
-      console.error('Engram: missing transcript_path or cwd in hook input');
-    }
+    logger.debug('missing transcript_path or cwd in hook input');
     process.exit(0);
   }
 
@@ -29,9 +27,7 @@ export const main = async (): Promise<void> => {
     const pairs = await claudeCodeAdapter.parse(input.transcript_path);
     await processSession(pairs, globalDir, projectDir);
   } catch (error) {
-    if (process.env.ENGRAM_DEBUG === '1') {
-      console.error('Engram stop hook error:', error);
-    }
+    logger.error('stop hook error:', error);
     process.exit(1);
   }
 };

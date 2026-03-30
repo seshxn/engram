@@ -1,7 +1,17 @@
+import { displayEntry } from '../memory/metadata.js';
+
 export interface MemorySection {
   heading: string;
   entries: string[];
 }
+
+export const formatGuidanceXml = (guidance: string): string => {
+  if (!guidance.trim()) {
+    return '';
+  }
+
+  return `<engram-guidance>\n${guidance.trim()}\n</engram-guidance>`;
+};
 
 export const formatMemoryXml = (sections: MemorySection[]): string => {
   const nonEmpty = sections.filter((section) => section.entries.length > 0);
@@ -10,7 +20,10 @@ export const formatMemoryXml = (sections: MemorySection[]): string => {
   }
 
   const body = nonEmpty
-    .map((section) => `## ${section.heading}\n${section.entries.map((entry) => `- ${entry}`).join('\n')}`)
+    .map(
+      (section) =>
+        `## ${section.heading}\n${section.entries.map((entry) => `- ${displayEntry(entry)}`).join('\n')}`,
+    )
     .join('\n\n');
 
   return `<engram-memory>\n${body}\n</engram-memory>`;

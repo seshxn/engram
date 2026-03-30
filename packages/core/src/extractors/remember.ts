@@ -1,4 +1,5 @@
 import type { ExtractionResult } from './types.js';
+import { detectScope } from './scope.js';
 
 const sentenceCase = (value: string): string => {
   if (value.length === 0) {
@@ -29,7 +30,8 @@ export const extractRemember = (
       {
         entry: sentenceCase(`prefer ${preferenceMatch[1].trim()}`),
         target: 'user-preferences',
-        scope: 'global',
+        scope: detectScope(content),
+        confidence: 'high',
       },
     ];
   }
@@ -39,6 +41,7 @@ export const extractRemember = (
       entry: sentenceCase(content),
       target: 'project-context',
       scope: 'project',
+      confidence: 'high',
     },
   ];
 };

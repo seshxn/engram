@@ -9,6 +9,8 @@ describe('extractor orchestrator', () => {
       { user: "let's go with PostgreSQL", assistant: 'Setting up PostgreSQL.' },
       { user: 'we still need to fix the auth bug', assistant: 'Noted.' },
       { user: 'remember that staging uses a different schema', assistant: 'Got it.' },
+      { user: 'be more concise', assistant: 'Will do.' },
+      { user: 'we use vitest and pnpm in this repo', assistant: 'Noted.' },
     ];
 
     const results = runAllExtractors(pairs);
@@ -19,6 +21,7 @@ describe('extractor orchestrator', () => {
     expect(targets).toContain('project-decisions');
     expect(targets).toContain('pending-items');
     expect(targets).toContain('project-context');
+    expect(results.some((result) => result.entry === 'Be more concise')).toBe(true);
   });
 
   it('returns an empty array for an empty transcript', () => {

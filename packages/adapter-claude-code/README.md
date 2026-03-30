@@ -4,9 +4,10 @@ Persistent local memory for Claude Code.
 
 ## What it does
 
-This plugin adds two hooks to Claude Code:
+This plugin adds three hooks to Claude Code:
 
-- `SessionStart` reads Engram global memory and emits deep-review prompts when needed
+- `SessionStart` injects current memory, guidance, and deep-review prompts
+- `UserPromptSubmit` re-injects memory after compaction only when the payload changed
 - `Stop` parses the transcript and stores extracted memories into Claude-native project memory
 
 Engram stores:
@@ -38,6 +39,7 @@ Then run `/reload-plugins` after changes.
 - `.claude-plugin/plugin.json`: plugin metadata
 - `hooks/hooks.json`: Claude Code hook registration
 - `dist/session-start.js`: bundled SessionStart runtime
+- `dist/prompt-submit.js`: bundled UserPromptSubmit runtime
 - `dist/session-stop.js`: bundled Stop runtime
 
 ## Development

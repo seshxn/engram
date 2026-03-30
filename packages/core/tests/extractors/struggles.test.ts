@@ -15,6 +15,7 @@ describe('struggles extractor', () => {
         entry: "Repeatedly struggles with: Cannot find module 'chalk'",
         target: 'user-patterns',
         scope: 'global',
+        confidence: 'low',
       },
     ]);
   });

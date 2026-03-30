@@ -13,6 +13,7 @@ describe('remember extractor', () => {
         entry: 'Staging uses a different schema',
         target: 'project-context',
         scope: 'project',
+        confidence: 'high',
       },
     ]);
   });
@@ -28,6 +29,7 @@ describe('remember extractor', () => {
         entry: 'Prefer terse responses',
         target: 'user-preferences',
         scope: 'global',
+        confidence: 'high',
       },
     ]);
   });

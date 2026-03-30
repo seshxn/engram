@@ -1,10 +1,30 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import type { ExtractionConfidence } from '../extractors/types.js';
 import type { MemorySection } from '../utils/format.js';
+import { displayEntry, parseEntryMetadata } from './metadata.js';
 import { parseMemoryFile, parseNativeProjectMemoryFile } from './writer.js';
 
 interface ReadAllMemoriesResult {
   sections: MemorySection[];
+  globalCount: number;
+  projectCount: number;
+}
+
+export interface DetailedMemoryEntry {
+  confidence?: ExtractionConfidence;
+  scope: 'global' | 'project';
+  text: string;
+  updated: string | null;
+}
+
+export interface DetailedMemorySection {
+  heading: string;
+  entries: DetailedMemoryEntry[];
+}
+
+interface ReadDetailedMemoriesResult {
+  sections: DetailedMemorySection[];
   globalCount: number;
   projectCount: number;
 }
@@ -28,6 +48,21 @@ const readEntries = (baseDir: string, fileName: string): string[] => {
   }
 
   return parseMemoryFile(fs.readFileSync(filePath, 'utf8')).entries;
+};
+
+const readDetailedGlobalEntries = (baseDir: string, fileName: string): DetailedMemoryEntry[] => {
+  const filePath = path.join(baseDir, 'memory', fileName);
+  if (!fs.existsSync(filePath)) {
+    return [];
+  }
+
+  const parsed = parseMemoryFile(fs.readFileSync(filePath, 'utf8'));
+  return parsed.entries.map((entry) => ({
+    text: entry,
+    scope: 'global',
+    updated: parsed.updated,
+    confidence: parseEntryMetadata(entry).confidence,
+  }));
 };
 
 const inferHeading = (fileName: string, type: string | null): string | null => {
@@ -105,19 +140,43 @@ const readProjectSections = (projectDir: string): MemorySection[] => {
     .filter((section): section is MemorySection => section !== null);
 };
 
-export const readAllMemories = (globalDir: string, projectDir: string): ReadAllMemoriesResult => {
-  const sectionMap = new Map<string, string[]>();
+export const readDetailedMemories = (
+  globalDir: string,
+  projectDir: string,
+): ReadDetailedMemoriesResult => {
+  const sectionMap = new Map<string, DetailedMemoryEntry[]>();
   let globalCount = 0;
   let projectCount = 0;
 
-  for (const section of readProjectSections(projectDir)) {
-    sectionMap.set(section.heading, [...(sectionMap.get(section.heading) ?? []), ...section.entries]);
-    projectCount += section.entries.length;
+  const projectMemoryDir = path.join(projectDir, 'memory');
+  if (fs.existsSync(projectMemoryDir)) {
+    for (const fileName of fs.readdirSync(projectMemoryDir)) {
+      if (!fileName.endsWith('.md') || fileName === 'MEMORY.md') {
+        continue;
+      }
+
+      const parsed = parseNativeProjectMemoryFile(
+        fs.readFileSync(path.join(projectMemoryDir, fileName), 'utf8'),
+      );
+      const heading = inferHeading(fileName, parsed.type);
+      if (!heading || !parsed.entry) {
+        continue;
+      }
+
+      const entries = sectionMap.get(heading) ?? [];
+      entries.push({
+        text: parsed.entry,
+        scope: 'project',
+        updated: parsed.updated,
+        confidence: parsed.confidence ?? undefined,
+      });
+      sectionMap.set(heading, entries);
+      projectCount += 1;
+    }
   }
 
   for (const descriptor of DESCRIPTORS) {
-    const entries = readEntries(globalDir, descriptor.fileName);
-
+    const entries = readDetailedGlobalEntries(globalDir, descriptor.fileName);
     if (entries.length === 0) {
       continue;
     }
@@ -140,7 +199,20 @@ export const readAllMemories = (globalDir: string, projectDir: string): ReadAllM
       const entries = sectionMap.get(heading) ?? [];
       return entries.length > 0 ? { heading, entries } : null;
     })
-    .filter((section): section is MemorySection => section !== null);
+    .filter((section): section is DetailedMemorySection => section !== null);
 
   return { sections, globalCount, projectCount };
+};
+
+export const readAllMemories = (globalDir: string, projectDir: string): ReadAllMemoriesResult => {
+  const detailed = readDetailedMemories(globalDir, projectDir);
+
+  return {
+    sections: detailed.sections.map((section) => ({
+      heading: section.heading,
+      entries: section.entries.map((entry) => displayEntry(entry.text)),
+    })),
+    globalCount: detailed.globalCount,
+    projectCount: detailed.projectCount,
+  };
 };

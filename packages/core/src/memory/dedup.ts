@@ -1,10 +1,9 @@
-const DATE_TAG = /\s*\[\d{4}-\d{2}-\d{2}\]\s*$/;
 const PUNCTUATION = /[.,;:!?]/g;
 const DUPLICATE_THRESHOLD = 0.8;
+import { stripMetadataTags } from './metadata.js';
 
 export const normalize = (entry: string): string => {
-  return entry
-    .replace(DATE_TAG, '')
+  return stripMetadataTags(entry)
     .toLowerCase()
     .replace(PUNCTUATION, ' ')
     .replace(/\s+/g, ' ')
