@@ -24,9 +24,6 @@ No external APIs. No account setup. No cost. Everything stays on your machine.
 | Agent | Status | Package |
 | --- | --- | --- |
 | Claude Code | Supported | `@engram/adapter-claude-code` |
-| Cursor | Planned | — |
-| Cline | Planned | — |
-| Aider | Planned | — |
 
 ## Install
 
