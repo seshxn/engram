@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(TEST_DIR, '..');
+const REPO_ROOT = path.resolve(PACKAGE_ROOT, '..', '..');
 
 describe('adapter package marketplace readiness', () => {
   it('has a plugin-level README', () => {
@@ -75,5 +76,41 @@ describe('adapter package marketplace readiness', () => {
       'compact',
     ]);
     expect(hooksConfig.hooks.Stop[0].matcher).toBeUndefined();
+  });
+
+  it('publishes a repo-root marketplace that installs the plugin from this monorepo subdirectory', () => {
+    const marketplacePath = path.join(REPO_ROOT, '.claude-plugin', 'marketplace.json');
+
+    expect(fs.existsSync(marketplacePath)).toBe(true);
+
+    const marketplace = JSON.parse(fs.readFileSync(marketplacePath, 'utf8')) as {
+      name: string;
+      owner: { name: string };
+      plugins: Array<{
+        name: string;
+        source: {
+          source: string;
+          url: string;
+          path: string;
+        };
+      }>;
+    };
+
+    expect(marketplace.name).toBeTypeOf('string');
+    expect(marketplace.owner.name).toBeTypeOf('string');
+
+    const engramEntry = marketplace.plugins.find((plugin) => plugin.name === 'engram');
+
+    expect(engramEntry).toBeDefined();
+    expect(engramEntry?.source.source).toBe('git-subdir');
+    expect(engramEntry?.source.url).toContain('github.com/seshanpillay/engram');
+    expect(engramEntry?.source.path).toBe('packages/adapter-claude-code');
+  });
+
+  it('documents marketplace install commands in the main README', () => {
+    const readme = fs.readFileSync(path.join(REPO_ROOT, 'README.md'), 'utf8');
+
+    expect(readme).toContain('/plugin marketplace add');
+    expect(readme).toContain('/plugin install engram@');
   });
 });
