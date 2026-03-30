@@ -29,20 +29,27 @@ No external APIs. No account setup. No cost. Everything stays on your machine.
 
 ### Claude Code
 
+Add the marketplace and install the plugin:
+
+```text
+/plugin marketplace add https://raw.githubusercontent.com/seshanpillay/engram/main/.claude-plugin/marketplace.json
+/plugin install engram@engram-tools
+```
+
+Refresh marketplaces when you want the latest catalog entry:
+
+```text
+/plugin marketplace update
+```
+
+This install path does not require users to clone the repo. The marketplace entry fetches the plugin from the monorepo with a sparse `git-subdir` source.
+
+For local development from this repository, keep using:
+
 ```bash
 npm install
 npm run install:claude-code-plugin
 ```
-
-Then start Claude Code with the local plugin:
-
-```text
-claude --plugin-dir ./packages/adapter-claude-code
-```
-
-After Claude starts, run `/reload-plugins`.
-
-Engram currently targets Claude Code first. The repo is not set up for npm publishing as a standalone package yet.
 
 ## How it works
 

@@ -1,0 +1,33 @@
+{
+  "name": "engram-tools",
+  "owner": {
+    "name": "seshanpillay"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for Engram persistent memory",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "engram",
+      "description": "Persistent local memory for Claude Code. Learns from your sessions, remembers across them.",
+      "version": "0.1.0",
+      "author": {
+        "name": "seshanpillay"
+      },
+      "homepage": "https://github.com/seshanpillay/engram",
+      "repository": "https://github.com/seshanpillay/engram",
+      "keywords": [
+        "engram",
+        "claude-code",
+        "memory",
+        "persistent"
+      ],
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/seshanpillay/engram.git",
+        "path": "packages/adapter-claude-code"
+      }
+    }
+  ]
+}

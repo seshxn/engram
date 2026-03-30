@@ -19,20 +19,21 @@ No repo-local `.engram/` directory is required.
 
 ## Install
 
-From the repo root, the easiest path is:
+Install from the Engram marketplace:
+
+```text
+/plugin marketplace add https://raw.githubusercontent.com/seshanpillay/engram/main/.claude-plugin/marketplace.json
+/plugin install engram@engram-tools
+```
+
+This install path does not require cloning the repository. The marketplace fetches the plugin from the monorepo with a sparse `git-subdir` source.
+
+For local development from this repository, build the plugin bundle from the repo root:
 
 ```bash
 npm install
 npm run install:claude-code-plugin
 ```
-
-Or run Claude directly with the plugin directory:
-
-```bash
-claude --plugin-dir ./packages/adapter-claude-code
-```
-
-Then run `/reload-plugins` after changes.
 
 ## Files
 
