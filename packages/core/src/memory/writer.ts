@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import type { ExtractionConfidence, MemoryTarget } from '../extractors/types.js';
 import { deduplicateEntries } from './dedup.js';
-import type { MemoryTarget } from '../extractors/types.js';
+import { displayEntry, formatEntryWithMetadata, parseEntryMetadata } from './metadata.js';
 
 export interface ParsedMemoryFile {
   updated: string | null;
@@ -15,11 +16,17 @@ export interface WriteEntriesOptions {
 }
 
 interface NativeProjectMemoryFile {
+  confidence: ExtractionConfidence | null;
   description: string | null;
   entry: string;
   name: string;
   type: string | null;
   updated: string | null;
+}
+
+export interface MemoryWriteEntry {
+  confidence?: ExtractionConfidence;
+  text: string;
 }
 
 interface NativeProjectMemoryRecord {
@@ -86,9 +93,7 @@ const stripFrontmatter = (content: string): string => {
   return match ? content.slice(match[0].length) : content;
 };
 
-const DATE_TAG = /\s*\[\d{4}-\d{2}-\d{2}\]\s*$/;
-
-const baseEntry = (entry: string): string => entry.replace(DATE_TAG, '').trim();
+const baseEntry = (entry: string): string => parseEntryMetadata(entry).text;
 
 const titleCase = (entry: string): string => {
   const normalized = baseEntry(entry);
@@ -169,6 +174,7 @@ export const parseNativeProjectMemoryFile = (content: string): NativeProjectMemo
   const entry = body[0] ?? frontmatter.description ?? frontmatter.name ?? '';
 
   return {
+    confidence: (frontmatter.confidence as ExtractionConfidence | undefined) ?? null,
     updated: frontmatter.updated ?? null,
     name: frontmatter.name ?? titleCase(entry),
     description: frontmatter.description ?? null,
@@ -181,21 +187,32 @@ const serializeNativeProjectMemoryFile = (
   entry: string,
   target: MemoryTarget,
   updatedAt: string,
+  confidence?: ExtractionConfidence,
 ): string => {
   const metadata = targetMetadata(target);
   const name = titleCase(entry);
-  const description = entry.trim();
+  const description = displayEntry(entry.trim());
+  const lines = [
+    '---',
+    `name: ${name}`,
+    `description: ${description}`,
+    `type: ${metadata.type}`,
+    `updated: ${updatedAt}`,
+  ];
 
-  return `---
-name: ${name}
-description: ${description}
-type: ${metadata.type}
-updated: ${updatedAt}
----
+  if (confidence) {
+    lines.push(`confidence: ${confidence}`);
+  }
 
-${description}
-`;
+  lines.push('---', '', description);
+
+  return `${lines.join('\n')}\n`;
 };
+
+const toStoredEntry = (entry: string | MemoryWriteEntry, updatedAt: string): string =>
+  typeof entry === 'string'
+    ? entry
+    : formatEntryWithMetadata(entry.text, updatedAt.split('T')[0], entry.confidence);
 
 const loadProjectMemoryRecords = (projectDir: string): NativeProjectMemoryRecord[] => {
   const memoryDir = path.join(projectDir, 'memory');
@@ -272,7 +289,7 @@ const enforceLimits = (entries: string[], maxEntries: number, maxChars: number):
 
 export const writeEntries = (
   filePath: string,
-  incomingEntries: string[],
+  incomingEntries: Array<string | MemoryWriteEntry>,
   options: WriteEntriesOptions,
 ): void => {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -281,7 +298,10 @@ export const writeEntries = (
     ? parseMemoryFile(fs.readFileSync(filePath, 'utf8'))
     : { updated: null, entries: [] };
 
-  const { toAdd, toUpdate } = deduplicateEntries(existing.entries, incomingEntries);
+  const serializedIncoming = incomingEntries.map((entry) =>
+    toStoredEntry(entry, options.updatedAt ?? new Date().toISOString()),
+  );
+  const { toAdd, toUpdate } = deduplicateEntries(existing.entries, serializedIncoming);
   const nextEntries = [...existing.entries];
 
   for (const update of toUpdate) {
@@ -302,7 +322,7 @@ export const writeEntries = (
 export const writeProjectMemoryEntries = (
   projectDir: string,
   target: MemoryTarget,
-  incomingEntries: string[],
+  incomingEntries: Array<string | MemoryWriteEntry>,
   updatedAt = new Date().toISOString(),
 ): void => {
   fs.mkdirSync(path.join(projectDir, 'memory'), { recursive: true });
@@ -310,13 +330,19 @@ export const writeProjectMemoryEntries = (
   const allRecords = loadProjectMemoryRecords(projectDir);
   const targetRecords = allRecords.filter((record) => record.target === target);
   const existingEntries = targetRecords.map((record) => record.data.entry);
-  const { toAdd, toUpdate } = deduplicateEntries(existingEntries, incomingEntries);
+  const serializedIncoming = incomingEntries.map((entry) => toStoredEntry(entry, updatedAt));
+  const { toAdd, toUpdate } = deduplicateEntries(existingEntries, serializedIncoming);
 
   for (const update of toUpdate) {
     const record = targetRecords[update.oldIndex];
     fs.writeFileSync(
       record.filePath,
-      serializeNativeProjectMemoryFile(update.newEntry, target, updatedAt),
+      serializeNativeProjectMemoryFile(
+        update.newEntry,
+        target,
+        updatedAt,
+        parseEntryMetadata(update.newEntry).confidence,
+      ),
       'utf8',
     );
   }
@@ -324,7 +350,16 @@ export const writeProjectMemoryEntries = (
   const { filePrefix } = targetMetadata(target);
   for (const entry of toAdd) {
     const filePath = uniqueFilePath(projectDir, filePrefix, entry);
-    fs.writeFileSync(filePath, serializeNativeProjectMemoryFile(entry, target, updatedAt), 'utf8');
+    fs.writeFileSync(
+      filePath,
+      serializeNativeProjectMemoryFile(
+        entry,
+        target,
+        updatedAt,
+        parseEntryMetadata(entry).confidence,
+      ),
+      'utf8',
+    );
   }
 
   rewriteProjectMemoryIndex(projectDir);

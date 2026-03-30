@@ -77,6 +77,45 @@ describe('processSession', () => {
     expect(state.session_summary.length).toBeLessThanOrEqual(3000);
   });
 
+  it('writes session guidance from recent conversation context', async () => {
+    const pairs: MessagePair[] = [
+      { user: 'We are refactoring auth.ts to split token validation.', assistant: 'I will update auth.ts first.' },
+      { user: 'Next we still need to migrate the session cache.', assistant: 'I will continue with session cache after auth.ts.' },
+    ];
+
+    await processSession(pairs, globalDir, projectDir);
+
+    const guidance = JSON.parse(
+      fs.readFileSync(path.join(projectDir, 'state', 'guidance.json'), 'utf8'),
+    ) as { content: string; consumed: boolean };
+
+    expect(guidance.content).toContain('auth.ts');
+    expect(guidance.content).toContain('session cache');
+    expect(guidance.consumed).toBe(false);
+  });
+
+  it('tracks extraction stats after processing a session', async () => {
+    const pairs: MessagePair[] = [
+      { user: 'be more concise', assistant: 'Understood.' },
+      { user: 'we use vitest in this repo', assistant: 'Noted.' },
+    ];
+
+    await processSession(pairs, globalDir, projectDir);
+
+    const stats = JSON.parse(
+      fs.readFileSync(path.join(globalDir, 'state', 'stats.json'), 'utf8'),
+    ) as {
+      extractor_hits: Record<string, number>;
+      last_extraction_time: string;
+      session_count: number;
+    };
+
+    expect(stats.session_count).toBe(1);
+    expect(stats.extractor_hits.communication).toBeGreaterThan(0);
+    expect(stats.extractor_hits.testing).toBeGreaterThan(0);
+    expect(typeof stats.last_extraction_time).toBe('string');
+  });
+
   it('persists assistant review suggestions into Engram-owned files', async () => {
     const pairs: MessagePair[] = [
       {

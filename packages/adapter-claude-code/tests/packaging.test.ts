@@ -27,18 +27,23 @@ describe('adapter package marketplace readiness', () => {
       hooks: {
         SessionStart: Array<{ hooks: Array<{ command: string }> }>;
         Stop: Array<{ hooks: Array<{ command: string }> }>;
+        UserPromptSubmit: Array<{ hooks: Array<{ command: string }> }>;
       };
     };
 
     const startCommand = hooksConfig.hooks.SessionStart[0].hooks[0].command;
     const stopCommand = hooksConfig.hooks.Stop[0].hooks[0].command;
+    const promptSubmitCommand = hooksConfig.hooks.UserPromptSubmit[0].hooks[0].command;
 
     expect(startCommand).toContain('dist/session-start.js');
     expect(stopCommand).toContain('dist/session-stop.js');
+    expect(promptSubmitCommand).toContain('dist/prompt-submit.js');
     expect(startCommand).not.toContain('tsx');
     expect(stopCommand).not.toContain('tsx');
+    expect(promptSubmitCommand).not.toContain('tsx');
     expect(startCommand).not.toContain('/src/');
     expect(stopCommand).not.toContain('/src/');
+    expect(promptSubmitCommand).not.toContain('/src/');
   });
 
   it('keeps the Stop hook synchronous so Claude print-mode runs persist memory before exit', () => {

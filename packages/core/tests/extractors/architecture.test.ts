@@ -13,6 +13,23 @@ describe('architecture extractor', () => {
         entry: 'The app uses Next.js in a pnpm monorepo and deploys to AWS',
         target: 'project-context',
         scope: 'project',
+        confidence: 'low',
+      },
+    ]);
+  });
+
+  it('captures modern stack signals beyond the initial keyword set', () => {
+    const results = extractArchitecture(
+      'this repo uses GraphQL with Redis and deploys on Fly',
+      'Noted.',
+    );
+
+    expect(results).toEqual([
+      {
+        entry: 'This repo uses GraphQL with Redis and deploys on Fly',
+        target: 'project-context',
+        scope: 'project',
+        confidence: 'low',
       },
     ]);
   });

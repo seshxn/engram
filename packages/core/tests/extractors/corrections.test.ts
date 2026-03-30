@@ -13,6 +13,20 @@ describe('corrections extractor', () => {
         entry: 'Use pnpm not npm for this project',
         target: 'user-preferences',
         scope: 'global',
+        confidence: 'medium',
+      },
+    ]);
+  });
+
+  it('captures preference corrections phrased as forward-looking guidance', () => {
+    const results = extractCorrections('from now on, be more concise', 'Understood.');
+
+    expect(results).toEqual([
+      {
+        entry: 'Be more concise',
+        target: 'user-preferences',
+        scope: 'global',
+        confidence: 'medium',
       },
     ]);
   });

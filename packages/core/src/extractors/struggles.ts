@@ -51,6 +51,7 @@ export const extractStruggles = (pairs: MessagePair[]): ExtractionResult[] => {
           entry: `Repeatedly struggles with: ${issue.display}`,
           target: 'user-patterns',
           scope: 'global',
+          confidence: 'low',
         },
       ];
     }

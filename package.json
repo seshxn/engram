@@ -2,9 +2,11 @@
   "name": "engram",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "engram": "./packages/core/bin/engram.js"
+  },
   "description": "Persistent local memory for AI coding agents. Learns from your sessions, remembers across them.",
   "author": "seshanpillay",
-  "license": "MIT",
   "workspaces": [
     "packages/*"
   ],

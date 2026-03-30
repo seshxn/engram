@@ -42,6 +42,7 @@ export const extractReviewSuggestions = (
         entry,
         scope: mapping.scope,
         target: mapping.target,
+        confidence: 'high',
       });
     }
   }

@@ -1,9 +1,15 @@
-import { ensureDirs, generateOutput, getGlobalDir, getProjectDir, logger } from '@engram/core';
+import {
+  ensureDirs,
+  generateDiffOutput,
+  getGlobalDir,
+  getProjectDir,
+  logger,
+} from '@engram/core';
 import { readStdinJson } from './hooks-io.js';
 
 interface HookInput {
-  session_id?: string;
   cwd?: string;
+  session_id?: string;
 }
 
 export const main = async (): Promise<void> => {
@@ -22,16 +28,16 @@ export const main = async (): Promise<void> => {
   ensureDirs(globalDir, projectDir);
 
   try {
-    const output = generateOutput(globalDir, projectDir);
+    const output = generateDiffOutput(globalDir, projectDir);
     if (output) {
       console.log(output);
     }
   } catch (error) {
-    logger.error('start hook error:', error);
+    logger.error('prompt submit hook error:', error);
     process.exit(1);
   }
 };
 
-if (process.argv[1]?.includes('session-start')) {
+if (process.argv[1]?.includes('prompt-submit')) {
   void main();
 }

@@ -24,16 +24,19 @@ describe('review suggestions extractor', () => {
         entry: 'Use pnpm not npm for this project',
         scope: 'global',
         target: 'user-preferences',
+        confidence: 'high',
       },
       {
         entry: 'Staging uses a different schema',
         scope: 'project',
         target: 'project-context',
+        confidence: 'high',
       },
       {
         entry: 'Add rate limiting',
         scope: 'project',
         target: 'pending-items',
+        confidence: 'high',
       },
     ]);
   });

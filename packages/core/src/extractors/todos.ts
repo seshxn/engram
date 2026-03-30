@@ -1,4 +1,5 @@
 import type { ExtractionResult } from './types.js';
+import { detectScope } from './scope.js';
 
 const sentenceCase = (value: string): string => {
   if (value.length === 0) {
@@ -6,10 +7,6 @@ const sentenceCase = (value: string): string => {
   }
 
   return `${value[0].toUpperCase()}${value.slice(1)}`;
-};
-
-const detectScope = (text: string): 'global' | 'project' => {
-  return /across projects|all repos|every project|globally/i.test(text) ? 'global' : 'project';
 };
 
 export const extractTodos = (userMsg: string, _assistantMsg: string): ExtractionResult[] => {
@@ -27,11 +24,13 @@ export const extractTodos = (userMsg: string, _assistantMsg: string): Extraction
       continue;
     }
 
+    const entry = sentenceCase(match[1].trim());
     return [
       {
-        entry: sentenceCase(match[1].trim()),
+        entry,
         target: 'pending-items',
-        scope: detectScope(trimmed),
+        scope: detectScope(match[1].trim()),
+        confidence: 'high',
       },
     ];
   }

@@ -1,7 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { runAllExtractors } from './extractors/index.js';
+import { runAllExtractorsWithStats } from './extractors/index.js';
 import type { ExtractionResult } from './extractors/types.js';
+import { writeGuidance } from './guidance.js';
+import { consolidateMemories } from './memory/consolidator.js';
+import { updateStats } from './memory/stats.js';
 import { writeEntries, writeProjectMemoryEntries } from './memory/writer.js';
 import { summarizeTranscript } from './transcript/summarizer.js';
 import type { MessagePair } from './transcript/types.js';
@@ -37,12 +40,15 @@ export const processSession = async (
   ensureDirs(globalDir, projectDir);
 
   const config = { ...loadConfig(globalDir), ...configOverrides };
-  const grouped = groupResults(runAllExtractors(pairs));
-  const today = new Date().toISOString().split('T')[0];
+  const extractionRun = runAllExtractorsWithStats(pairs);
+  const grouped = groupResults(extractionRun.results);
 
   for (const [key, results] of grouped.entries()) {
     const [scope, target] = key.split(':');
-    const entries = results.map((result) => `${result.entry} [${today}]`);
+    const entries = results.map((result) => ({
+      text: result.entry,
+      confidence: result.confidence,
+    }));
 
     if (scope === 'global') {
       const filePath = path.join(globalDir, 'memory', `${target}.md`);
@@ -65,6 +71,10 @@ export const processSession = async (
     state.needs_deep_review = true;
     state.session_summary = summarizeTranscript(pairs);
   }
+
+  writeGuidance(projectDir, pairs, state.last_processed);
+  consolidateMemories(globalDir, projectDir, config.max_entries_per_file, config.max_chars_per_file);
+  updateStats(globalDir, projectDir, extractionRun.extractorHits, state.last_processed);
 
   fs.writeFileSync(
     path.join(projectDir, 'state', 'session-history.json'),

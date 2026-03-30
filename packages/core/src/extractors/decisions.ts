@@ -14,24 +14,26 @@ export const extractDecisions = (
 ): ExtractionResult[] => {
   const trimmed = userMsg.trim();
 
-  const letsGoWith = trimmed.match(/^let'?s go with\s+(.+)$/i);
-  if (letsGoWith) {
-    return [
-      {
-        entry: sentenceCase(`go with ${letsGoWith[1].trim()}`),
-        target: 'project-decisions',
-        scope: 'project',
-      },
-    ];
-  }
+  const patterns: Array<{ pattern: RegExp; transform: (value: string) => string }> = [
+    { pattern: /^let'?s go with\s+(.+)$/i, transform: (value) => `go with ${value}` },
+    { pattern: /^(?:we(?:'ll| will)|decided on)\s+(.+)$/i, transform: (value) => value },
+    { pattern: /^(?:i )?(?:chose|picked|selected)\s+(.+)$/i, transform: (value) => value },
+    { pattern: /^we(?:'re| are) going (?:to |with)\s*(.+)$/i, transform: (value) => value },
+    { pattern: /^(?:the )?(?:plan|approach) is (?:to )?\s*(.+)$/i, transform: (value) => value },
+  ];
 
-  const weWillUse = trimmed.match(/^(?:we(?:'ll| will)|decided on)\s+(.+)$/i);
-  if (weWillUse) {
+  for (const { pattern, transform } of patterns) {
+    const match = trimmed.match(pattern);
+    if (!match) {
+      continue;
+    }
+
     return [
       {
-        entry: sentenceCase(weWillUse[1].trim()),
+        entry: sentenceCase(transform(match[1].trim())),
         target: 'project-decisions',
         scope: 'project',
+        confidence: 'high',
       },
     ];
   }
