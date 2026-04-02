@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { createRequire } from 'module';
 
 export interface EngramConfig {
   deep_review: boolean;
@@ -9,13 +10,28 @@ export interface EngramConfig {
   injection_budget: number;
 }
 
-export const DEFAULT_CONFIG: EngramConfig = {
-  deep_review: true,
-  deep_review_threshold: 10,
-  max_entries_per_file: 50,
-  max_chars_per_file: 5000,
-  injection_budget: 15000,
+const require = createRequire(import.meta.url);
+const defaultConfigData = require('../../../shared/config/default-config.json') as EngramConfig;
+
+export const DEFAULT_CONFIG: EngramConfig = defaultConfigData;
+
+const stripUndefinedValues = <T extends object>(overrides?: Partial<T>): Partial<T> => {
+  if (!overrides) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(overrides).filter(([, value]) => value !== undefined),
+  ) as Partial<T>;
 };
+
+export const mergeConfig = (
+  base: EngramConfig,
+  overrides?: Partial<EngramConfig>,
+): EngramConfig => ({
+  ...base,
+  ...stripUndefinedValues(overrides),
+});
 
 export const loadConfig = (globalDir: string): EngramConfig => {
   const configPath = path.join(globalDir, 'config.json');
@@ -23,8 +39,13 @@ export const loadConfig = (globalDir: string): EngramConfig => {
   try {
     const raw = fs.readFileSync(configPath, 'utf8');
     const parsed = JSON.parse(raw) as Partial<EngramConfig>;
-    return { ...DEFAULT_CONFIG, ...parsed };
+    return mergeConfig(DEFAULT_CONFIG, parsed);
   } catch {
-    return { ...DEFAULT_CONFIG };
+    return mergeConfig(DEFAULT_CONFIG);
   }
 };
+
+export const resolveConfig = (
+  globalDir: string,
+  overrides?: Partial<EngramConfig>,
+): EngramConfig => mergeConfig(loadConfig(globalDir), overrides);

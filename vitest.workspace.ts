@@ -17,4 +17,12 @@ export default defineWorkspace([
       passWithNoTests: true,
     },
   },
+  {
+    test: {
+      name: 'plugin-kit',
+      root: './packages/plugin-kit',
+      include: ['tests/**/*.test.ts'],
+      passWithNoTests: true,
+    },
+  },
 ]);

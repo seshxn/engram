@@ -2,6 +2,12 @@
 
 Persistent local memory for Claude Code.
 
+This package is the Claude Code host adapter for Engram's shared multi-host architecture:
+
+- `@engram/core` owns extraction, storage, and payload generation
+- `@engram/plugin-kit` owns shared memory commands, services, and config helpers
+- `@engram/adapter-claude-code` maps those surfaces into Claude hooks, commands, and skills
+
 ## What it does
 
 This plugin adds three hooks to Claude Code:
@@ -16,6 +22,12 @@ Engram stores:
 - Project-scoped Claude-native memory in `~/.claude/projects/<resolved-cwd>/memory/`
 
 No repo-local `.engram/` directory is required.
+
+The Claude adapter also exposes:
+
+- plugin commands for memory status, search, and review
+- shared Engram skills for onboarding, session review, memory hygiene, and preferences audit
+- Claude plugin `userConfig` for `deep_review`, `deep_review_threshold`, and `injection_budget`
 
 ## Install
 
@@ -39,9 +51,17 @@ npm run install:claude-code-plugin
 
 - `.claude-plugin/plugin.json`: plugin metadata
 - `hooks/hooks.json`: Claude Code hook registration
+- `commands/`: Claude command markdown entrypoints backed by shared Engram handlers
+- `skills/`: Claude-exposed Engram skill content
 - `dist/session-start.js`: bundled SessionStart runtime
 - `dist/prompt-submit.js`: bundled UserPromptSubmit runtime
 - `dist/session-stop.js`: bundled Stop runtime
+
+## Configuration
+
+After installation, configure plugin-managed settings from the Claude `/plugin` UI. Those values override `~/.claude/engram/config.json` for Claude sessions only.
+
+File config remains supported for shared defaults and local CLI usage.
 
 ## Development
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Agent-agnostic memory engine for AI coding agents",
   "author": "seshanpillay",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "main": "src/index.ts",
   "engines": {

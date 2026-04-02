@@ -14,7 +14,7 @@ import {
   formatReviewXml,
   formatSummaryLine,
 } from './utils/format.js';
-import { loadConfig } from './utils/config.js';
+import { resolveConfig, type EngramConfig } from './utils/config.js';
 import { ensureDirs } from './utils/paths.js';
 
 interface SessionState {
@@ -215,21 +215,32 @@ const advanceReviewLifecycle = (
   }
 };
 
-export const generateOutput = (globalDir: string, projectDir: string): string => {
+export const generateOutput = (
+  globalDir: string,
+  projectDir: string,
+  configOverrides?: Partial<EngramConfig>,
+): string => {
   ensureDirs(globalDir, projectDir);
 
-  const config = loadConfig(globalDir);
-  const parts = enforceBudget(buildMemoryPayload(globalDir, projectDir), config.injection_budget);
-  const output = renderMemoryPayload(parts);
+  const config = resolveConfig(globalDir, configOverrides);
+  const parts = buildMemoryPayload(globalDir, projectDir);
+  if (!config.deep_review) {
+    parts.review = undefined;
+  }
+  const trimmedParts = enforceBudget(parts, config.injection_budget);
+  const output = renderMemoryPayload(trimmedParts);
 
-  if (parts.guidance && output) {
+  if (trimmedParts.guidance && output) {
     markGuidanceConsumed(projectDir);
-    saveInjectionState(projectDir, hashString(renderMemoryPayload({ ...parts, guidance: undefined })));
+    saveInjectionState(
+      projectDir,
+      hashString(renderMemoryPayload({ ...trimmedParts, guidance: undefined })),
+    );
   } else {
     saveInjectionState(projectDir, hashString(output));
   }
 
-  advanceReviewLifecycle(projectDir, parts.sessionState, Boolean(parts.review && output));
+  advanceReviewLifecycle(projectDir, trimmedParts.sessionState, Boolean(trimmedParts.review && output));
 
   return output;
 };

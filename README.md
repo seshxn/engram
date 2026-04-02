@@ -19,6 +19,12 @@ Engram gives AI coding agents persistent memory across sessions. It:
 
 No external APIs. No account setup. No cost. Everything stays on your machine.
 
+Engram now has a shared multi-host product layer:
+
+- `@engram/core` owns the durable memory engine
+- `@engram/plugin-kit` owns shared commands, services, and config helpers
+- `@engram/adapter-claude-code` is the first host adapter
+
 ## Supported agents
 
 | Agent | Status | Package |
@@ -90,7 +96,15 @@ Memory entries also carry freshness and confidence metadata internally so Engram
 
 ## Configuration
 
-Optional config file at `~/.claude/engram/config.json`:
+Claude Code users can tune the plugin from the `/plugin` UI after installation. Engram exposes:
+
+- `deep_review`
+- `deep_review_threshold`
+- `injection_budget`
+
+Those plugin settings are applied by the Claude hooks at runtime and override the file-based values below for Claude sessions only.
+
+Optional file config at `~/.claude/engram/config.json`:
 
 ```json
 {
@@ -108,6 +122,8 @@ Environment variables:
 - `ENGRAM_CLAUDE_HOME` overrides the Claude base directory used for project memory lookup
 - `ENGRAM_DISABLED=1` disables the hooks
 - `ENGRAM_DEBUG=1` enables debug logging
+
+The file config remains the shared fallback for local CLI usage and for hosts that do not expose plugin-managed settings yet.
 
 ## CLI
 
@@ -133,14 +149,24 @@ This is meant for local repo usage for now rather than npm installation.
   utils/
   CLI
 
+@engram/plugin-kit
+  commands/
+  services/
+  config/
+  capabilities/
+
 @engram/adapter-claude-code
   transcript-adapter
   session-start hook
   prompt-submit hook
   session-stop hook
+  commands/
+  skills/
 ```
 
-To add a new agent adapter, implement `TranscriptAdapter` and wire its lifecycle hooks to `processSession()`, `generateOutput()`, and `generateDiffOutput()` as needed.
+The current shared command surface starts with `status`, `search`, `review`, and `inspect`, with Claude exposing the first three through plugin commands today.
+
+To add a new host adapter, keep host-specific lifecycle wiring in the adapter and route reusable behavior through `plugin-kit` and `core`.
 
 ## Development
 

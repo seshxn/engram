@@ -7,7 +7,29 @@
   },
   "homepage": "https://github.com/seshanpillay/engram",
   "repository": "https://github.com/seshanpillay/engram",
-  "license": "MIT",
+  "commands": "./commands",
+  "skills": "./skills",
+  "userConfig": {
+    "deep_review": {
+      "type": "boolean",
+      "title": "Deep Review",
+      "description": "Enable Engram's session review prompt after substantial sessions.",
+      "default": true
+    },
+    "deep_review_threshold": {
+      "type": "number",
+      "title": "Deep Review Threshold",
+      "description": "Minimum number of user/assistant turns before Engram flags a session for deeper review.",
+      "default": 10
+    },
+    "injection_budget": {
+      "type": "number",
+      "title": "Injection Budget",
+      "description": "Maximum number of characters Engram can inject into Claude at session start or after compaction.",
+      "default": 15000
+    }
+  },
+  "license": "AGPL-3.0-only",
   "keywords": [
     "engram",
     "claude-code",
