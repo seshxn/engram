@@ -1,10 +1,6 @@
-import {
-  ensureDirs,
-  generateDiffOutput,
-  getGlobalDir,
-  getProjectDir,
-  logger,
-} from '@engram/core';
+import { generateDiffOutput } from '@engram/core';
+import { resolveClaudeSettings } from './config-bridge.js';
+import { runClaudeHook } from './plugin-kit-hooks.js';
 import { readStdinJson } from './hooks-io.js';
 
 interface HookInput {
@@ -14,28 +10,23 @@ interface HookInput {
 
 export const main = async (): Promise<void> => {
   if (process.env.ENGRAM_DISABLED === '1') {
-    process.exit(0);
+    return process.exit(0);
   }
 
   const input = await readStdinJson<HookInput>();
-  if (!input?.cwd) {
-    logger.debug('missing cwd in hook input');
-    process.exit(0);
-  }
 
-  const globalDir = getGlobalDir();
-  const projectDir = getProjectDir(input.cwd);
-  ensureDirs(globalDir, projectDir);
+  await runClaudeHook({
+    input,
+    missingInputMessage: 'missing cwd in hook input',
+    errorLabel: 'prompt submit hook error:',
+    action: ({ globalDir, projectDir }) => {
+      const output = generateDiffOutput(globalDir, projectDir, resolveClaudeSettings(globalDir));
 
-  try {
-    const output = generateDiffOutput(globalDir, projectDir);
-    if (output) {
-      console.log(output);
-    }
-  } catch (error) {
-    logger.error('prompt submit hook error:', error);
-    process.exit(1);
-  }
+      if (output) {
+        console.log(output);
+      }
+    },
+  });
 };
 
 if (process.argv[1]?.includes('prompt-submit')) {

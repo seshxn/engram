@@ -1,11 +1,33 @@
 import { describe, expect, it } from 'vitest';
+import * as childProcess from 'child_process';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(TEST_DIR, '..');
 const REPO_ROOT = path.resolve(PACKAGE_ROOT, '..', '..');
+const NPM_CACHE = path.join(os.tmpdir(), 'engram-npm-cache');
+
+const packFiles = (): string[] => {
+  const output = childProcess.execFileSync(
+    'npm',
+    ['pack', '--dry-run', '--json'],
+    {
+      cwd: PACKAGE_ROOT,
+      env: {
+        ...process.env,
+        npm_config_cache: NPM_CACHE,
+      },
+      encoding: 'utf8',
+    },
+  );
+
+  const manifest = JSON.parse(output) as Array<{ files?: Array<{ path: string }> }>;
+
+  return manifest[0]?.files?.map((entry) => entry.path) ?? [];
+};
 
 describe('adapter package marketplace readiness', () => {
   it('has a plugin-level README', () => {
@@ -19,6 +41,84 @@ describe('adapter package marketplace readiness', () => {
 
     expect(manifest.homepage).toBeTypeOf('string');
     expect(manifest.repository).toBeTypeOf('string');
+  });
+
+  it('declares esbuild in the adapter package boundary for prepack builds', () => {
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.join(PACKAGE_ROOT, 'package.json'), 'utf8'),
+    ) as {
+      devDependencies?: Record<string, string>;
+    };
+
+    expect(packageJson.devDependencies?.esbuild).toBe('^0.27.4');
+  });
+
+  it('declares Claude command and skill surfaces in the plugin manifest', () => {
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(PACKAGE_ROOT, '.claude-plugin', 'plugin.json'), 'utf8'),
+    ) as Record<string, unknown>;
+
+    expect(manifest.commands).toBe('./commands');
+    expect(manifest.skills).toBe('./skills');
+
+    const expectedFiles = [
+      'commands/engram-status.md',
+      'commands/engram-search.md',
+      'commands/engram-review.md',
+      'skills/engram-memory-hygiene/SKILL.md',
+      'skills/engram-session-review/SKILL.md',
+      'skills/engram-project-onboarding/SKILL.md',
+      'skills/engram-preferences-audit/SKILL.md',
+    ];
+
+    for (const relativePath of expectedFiles) {
+      expect(fs.existsSync(path.join(PACKAGE_ROOT, relativePath))).toBe(true);
+    }
+  });
+
+  it('declares Claude plugin userConfig for shared Engram settings', () => {
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(PACKAGE_ROOT, '.claude-plugin', 'plugin.json'), 'utf8'),
+    ) as {
+      userConfig?: Record<
+        string,
+        {
+          type?: string;
+          title?: string;
+          description?: string;
+          default?: boolean | number;
+        }
+      >;
+    };
+
+    expect(manifest.userConfig).toEqual({
+      deep_review: {
+        type: 'boolean',
+        title: 'Deep Review',
+        description: expect.any(String),
+        default: true,
+      },
+      deep_review_threshold: {
+        type: 'number',
+        title: 'Deep Review Threshold',
+        description: expect.any(String),
+        default: 10,
+      },
+      injection_budget: {
+        type: 'number',
+        title: 'Injection Budget',
+        description: expect.any(String),
+        default: 15000,
+      },
+    });
+  });
+
+  it('ships the compiled dist hook entrypoints in a packed adapter release', () => {
+    const files = packFiles();
+
+    expect(files).toContain('dist/prompt-submit.js');
+    expect(files).toContain('dist/session-start.js');
+    expect(files).toContain('dist/session-stop.js');
   });
 
   it('runs compiled dist hook entrypoints instead of tsx source files', () => {

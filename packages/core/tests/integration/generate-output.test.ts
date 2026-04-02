@@ -158,6 +158,43 @@ describe('generateOutput', () => {
     expect(output).not.toContain('<engram-review>');
   });
 
+  it('applies runtime config overrides ahead of the file config', () => {
+    fs.writeFileSync(
+      path.join(globalDir, 'config.json'),
+      JSON.stringify({ deep_review: true, injection_budget: 2000 }, null, 2),
+      'utf8',
+    );
+    fs.writeFileSync(
+      path.join(projectDir, 'state', 'session-history.json'),
+      JSON.stringify(
+        {
+          needs_deep_review: true,
+          review_age: 0,
+          session_summary: 'Test summary',
+          last_processed: '2026-03-28T00:00:00Z',
+        },
+        null,
+        2,
+      ),
+      'utf8',
+    );
+    fs.writeFileSync(
+      path.join(globalDir, 'memory', 'user-preferences.md'),
+      `---\nupdated: 2026-03-28T00:00:00Z\nentries: 2\n---\n\n- ${'Keep output terse'.padEnd(120, 'A')} [2026-03-28] [confidence:high]\n- ${'Mention every detail'.padEnd(120, 'B')} [2026-03-28] [confidence:low]\n`,
+      'utf8',
+    );
+
+    const output = generateOutput(globalDir, projectDir, {
+      deep_review: false,
+      injection_budget: 280,
+    });
+
+    expect(output).not.toContain('<engram-review>');
+    expect(output.length).toBeLessThanOrEqual(280);
+    expect(output).toContain('Keep output terse');
+    expect(output).not.toContain('Mention every detail');
+  });
+
   it('re-injects on prompt submit only when payload content changes', () => {
     fs.writeFileSync(
       path.join(globalDir, 'memory', 'user-preferences.md'),

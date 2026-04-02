@@ -1,0 +1,7 @@
+{
+  "deep_review": true,
+  "deep_review_threshold": 10,
+  "max_entries_per_file": 50,
+  "max_chars_per_file": 5000,
+  "injection_budget": 15000
+}

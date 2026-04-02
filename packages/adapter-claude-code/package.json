@@ -3,15 +3,29 @@
   "version": "0.1.0",
   "description": "Claude Code adapter for Engram persistent memory",
   "author": "seshanpillay",
+  "license": "AGPL-3.0-only",
   "type": "module",
+  "files": [
+    ".claude-plugin",
+    "commands",
+    "dist",
+    "hooks",
+    "README.md",
+    "skills"
+  ],
+  "scripts": {
+    "prepack": "node build.mjs"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "@engram/core": "file:../core",
+    "@engram/plugin-kit": "file:../plugin-kit",
     "tsx": "^4.7.0"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0"
+    "@types/node": "^20.10.0",
+    "esbuild": "^0.27.4"
   }
 }
